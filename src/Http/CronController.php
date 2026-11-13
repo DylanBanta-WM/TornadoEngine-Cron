@@ -51,8 +51,10 @@ class CronController extends Controller
     {
         $job = $cron->find($job) ?? abort(404);
 
-        $cron->run($job);
+        if ($cron->run($job, wait: false) === null) {
+            return back()->with('cron_status', [$job->key, __('Another job is running. Jobs run one at a time, so try again when it finishes.'), false]);
+        }
 
-        return back()->with('cron_status', [$job->key, __('Ran it. See the result below.')]);
+        return back()->with('cron_status', [$job->key, __('Ran it. See the result above.')]);
     }
 }

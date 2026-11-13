@@ -5,6 +5,7 @@ namespace TornadoEngine\Cron\Tests;
 use App\Models\User;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 use Tests\TestCase;
 use TornadoEngine\Cron\Cron;
@@ -127,6 +128,22 @@ class CronTest extends TestCase
         ] as $expression => $text) {
             $this->assertSame($text, Explain::describe($expression), $expression);
         }
+    }
+
+    public function test_jobs_run_one_at_a_time(): void
+    {
+        $admin = $this->admin();
+        $other = Cache::lock('cron:turn', 60);
+        $other->get(); // Another job is running.
+
+        $this->actingAs($admin)->from('/administration/cron')->post('/administration/cron/test.refresh/run');
+        $this->assertSame(0, $this->runs);
+        $this->actingAs($admin)->get('/administration/cron')->assertSee('Another job is running.');
+
+        $other->release();
+        $this->actingAs($admin)->post('/administration/cron/test.refresh/run');
+        $this->assertSame(1, $this->runs);
+        $this->assertTrue(Cache::lock('cron:turn', 1)->get(), 'the turn is handed back');
     }
 
     public function test_the_card_warns_when_the_scheduler_isnt_running(): void

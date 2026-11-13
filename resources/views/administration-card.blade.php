@@ -35,7 +35,7 @@
                     @endif
                 </p>
                 @if ($status && $status[0] === $job->key)
-                    <p class="mt-1 text-green-700 dark:text-green-400">{{ $status[1] }}</p>
+                    <p @class(['mt-1', 'text-green-700 dark:text-green-400' => $status[2] ?? true, 'text-amber-800 dark:text-amber-300' => ! ($status[2] ?? true)])>{{ $status[1] }}</p>
                 @endif
             </div>
 

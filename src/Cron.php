@@ -3,6 +3,9 @@
 namespace TornadoEngine\Cron;
 
 use Closure;
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 use TornadoEngine\Cron\Models\CronJob;
 
@@ -63,10 +66,39 @@ class Cron
         return $this->settings($job)->schedule ?? $job->schedule;
     }
 
+    /** How long one job may hold the turn before it's assumed stuck (seconds). */
+    public const TURN = 3 * 3600;
+
     /**
-     * Runs a job now and records how it went.
+     * Runs a job and records how it went. Jobs run one at a time, so their GAM calls (and other
+     * heavy work) never pile up: scheduled runs wait their turn, while Run now ($wait false)
+     * gives up straight away and returns null if another job is running.
      */
-    public function run(Job $job): bool
+    public function run(Job $job, bool $wait = true): ?bool
+    {
+        $turn = Cache::lock('cron:turn', self::TURN);
+
+        if (! ($wait ? $this->waitFor($turn) : $turn->get())) {
+            return null;
+        }
+
+        try {
+            return $this->runNow($job);
+        } finally {
+            $turn->release();
+        }
+    }
+
+    private function waitFor(Lock $turn): bool
+    {
+        try {
+            return $turn->block(self::TURN);
+        } catch (LockTimeoutException) {
+            return false;
+        }
+    }
+
+    private function runNow(Job $job): bool
     {
         $settings = $this->settings($job);
 
