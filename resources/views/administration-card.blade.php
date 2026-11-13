@@ -16,8 +16,8 @@
     @forelse ($jobs as $job)
         @php
             $settings = $cron->settings($job);
-            $schedule = old('schedule', $cron->scheduleFor($job));
-            $preset = array_key_exists($schedule, \TornadoEngine\Cron\Cron::PRESETS);
+            $schedule = $cron->scheduleFor($job);
+            $failed = ! $status && $errors->has('schedule') && old('job') === $job->key;
         @endphp
         <div class="border-t border-gray-200 dark:border-gray-700 pt-4 first:border-t-0 first:pt-0 space-y-3">
             <div>
@@ -39,27 +39,18 @@
                 @endif
             </div>
 
-            <form method="POST" action="{{ route('cron.update', $job->key) }}" class="space-y-3"
-                  x-data="{ custom: @js(! $preset), schedule: @js($schedule) }">
+            <form method="POST" action="{{ route('cron.update', $job->key) }}" class="space-y-3">
                 @csrf
-                <input type="hidden" name="schedule" :value="schedule">
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div>
-                        <x-input-label :for="'cron-'.$job->key" :value="__('When it runs')" />
-                        <select id="cron-{{ $job->key }}" class="mt-1 block w-full min-h-11 rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-base focus:border-indigo-500 focus:ring-indigo-500"
-                                x-on:change="custom = $event.target.value === 'custom'; if (! custom) schedule = $event.target.value">
-                            @foreach (\TornadoEngine\Cron\Cron::PRESETS as $expression => $label)
-                                <option value="{{ $expression }}" @selected($preset && $schedule === $expression)>{{ __($label) }}</option>
-                            @endforeach
-                            <option value="custom" @selected(! $preset)>{{ __('Custom (cron expression)') }}</option>
-                        </select>
-                    </div>
-                    <div x-show="custom" x-cloak>
-                        <x-input-label :for="'cron-expr-'.$job->key" :value="__('Cron expression')" />
-                        <x-text-input :id="'cron-expr-'.$job->key" class="mt-1 block w-full font-mono" type="text" x-model="schedule" placeholder="0 2 * * *" />
-                    </div>
+                <input type="hidden" name="job" value="{{ $job->key }}">
+                <div>
+                    <x-input-label :for="'cron-'.$job->key" :value="__('When it runs')" />
+                    <x-text-input :id="'cron-'.$job->key" name="schedule" class="mt-1 block w-full font-mono" type="text" :value="$failed ? old('schedule') : $schedule" placeholder="* * * * *" autocapitalize="off" spellcheck="false" />
+                    @if ($failed)
+                        <x-input-error :messages="$errors->get('schedule')" class="mt-2" />
+                    @else
+                        <p class="mt-1 text-gray-600 dark:text-gray-400">{{ \TornadoEngine\Cron\Explain::describe($schedule) }}@if ($schedule !== $job->schedule) {{ __('(Default: :schedule)', ['schedule' => $job->schedule]) }}@endif</p>
+                    @endif
                 </div>
-                <x-input-error :messages="$status ? [] : $errors->get('schedule')" />
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <label class="inline-flex min-h-11 items-center gap-2">
                         <input type="hidden" name="enabled" value="0">

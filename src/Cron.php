@@ -18,7 +18,8 @@ use TornadoEngine\Cron\Models\CronJob;
  */
 class Cron
 {
-    public const PRESETS = [
+    /** Shown under the calculator; click one to try it. */
+    public const EXAMPLES = [
         '*/15 * * * *' => 'Every 15 minutes',
         '0 * * * *' => 'Every hour',
         '0 2 * * *' => 'Every night at 2:00',

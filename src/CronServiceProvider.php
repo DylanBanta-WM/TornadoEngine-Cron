@@ -22,7 +22,8 @@ class CronServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/cron.php');
 
         $administration->tab('cron', __('Scheduled jobs'), order: 20);
-        $administration->card('cron::administration-card', tab: 'cron');
+        $administration->card('cron::calculator', order: 10, tab: 'cron');
+        $administration->card('cron::administration-card', order: 20, tab: 'cron');
 
         // The scheduler container asks for the schedule every minute.
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule) use ($cron) {

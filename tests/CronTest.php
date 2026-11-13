@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
 use Tests\TestCase;
 use TornadoEngine\Cron\Cron;
+use TornadoEngine\Cron\Explain;
 use TornadoEngine\Cron\Models\CronJob;
 
 class CronTest extends TestCase
@@ -87,6 +88,45 @@ class CronTest extends TestCase
             ->assertSee('Refresh the test list')
             ->assertSee('Refreshed 3 items')
             ->assertSee('It broke');
+    }
+
+    public function test_each_job_takes_a_cron_expression_as_text(): void
+    {
+        $this->actingAs($this->admin())->get('/administration/cron')
+            ->assertSee('name="schedule"', false)
+            ->assertDontSee('<select', false)
+            ->assertSee('At 02:00.');
+
+        $this->actingAs($this->admin())->post('/administration/cron/test.refresh', ['job' => 'test.refresh', 'schedule' => ' 30 6 * * 1-5 ', 'enabled' => '1']);
+        $this->assertSame('30 6 * * 1-5', CronJob::find('test.refresh')->schedule);
+        $this->actingAs($this->admin())->get('/administration/cron')->assertSee('At 06:30 on Monday through Friday. (Default: 0 2 * * *)');
+    }
+
+    public function test_the_calculator_explains_expressions(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->get('/administration/cron')->assertSee('Cron calculator');
+
+        $this->actingAs($admin)->getJson('/administration/cron/explain?expression='.urlencode('*/15 9-17 * * mon-fri'))
+            ->assertOk()
+            ->assertJson(['valid' => true, 'description' => 'At every 15th minute past hour 9 through 17 on Monday through Friday.'])
+            ->assertJsonCount(5, 'next');
+        $this->actingAs($admin)->getJson('/administration/cron/explain?expression=61+*+*+*+*')->assertJson(['valid' => false, 'next' => []]);
+        $this->actingAs(User::factory()->create())->getJson('/administration/cron/explain?expression=*+*+*+*+*')->assertForbidden();
+    }
+
+    public function test_descriptions(): void
+    {
+        foreach ([
+            '0 * * * *' => 'At minute 0.',
+            '5,10,15 8 * * *' => 'At minute 5, 10 and 15 past hour 8.',
+            '0 0 1,15 * sun' => 'At 00:00 on day-of-month 1 and 15 and on Sunday.',
+            '30 4 * jan-mar 6' => 'At 04:30 on Saturday in January through March.',
+            '0 */3 * * *' => 'At minute 0 past every 3rd hour.',
+            '@weekly' => 'At 00:00 on Sunday.',
+        ] as $expression => $text) {
+            $this->assertSame($text, Explain::describe($expression), $expression);
+        }
     }
 
     public function test_the_card_warns_when_the_scheduler_isnt_running(): void
