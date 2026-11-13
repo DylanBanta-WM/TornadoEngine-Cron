@@ -15,13 +15,13 @@
     "extra": {
         "tornado": {
             "name": "Cron",
-            "core": ">=0.4",
+            "core": ">=0.6",
             "core-module": true,
             "provider": "TornadoEngine\\Cron\\CronServiceProvider",
             "compose": "docker/compose.yml"
         },
         "branch-alias": {
-            "dev-main": "0.1.x-dev"
+            "dev-main": "0.2.x-dev"
         }
     }
 }

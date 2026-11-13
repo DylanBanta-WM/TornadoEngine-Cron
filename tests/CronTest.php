@@ -83,7 +83,7 @@ class CronTest extends TestCase
         $this->assertSame('failed', CronJob::find('test.broken')->last_status);
         $this->assertSame('It broke', CronJob::find('test.broken')->last_message);
 
-        $this->actingAs($admin)->get('/administration')
+        $this->actingAs($admin)->get('/administration/cron')
             ->assertSee('Refresh the test list')
             ->assertSee('Refreshed 3 items')
             ->assertSee('It broke');
@@ -91,7 +91,7 @@ class CronTest extends TestCase
 
     public function test_the_card_warns_when_the_scheduler_isnt_running(): void
     {
-        $this->actingAs($this->admin())->get('/administration')->assertSee('The scheduler isn\'t running', false);
+        $this->actingAs($this->admin())->get('/administration/cron')->assertSee('The scheduler isn\'t running', false);
     }
 
     public function test_only_admins_can_change_jobs(): void
