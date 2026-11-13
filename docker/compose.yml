@@ -1,0 +1,20 @@
+# The scheduler: runs Laravel's scheduler, which starts the jobs admins set up in Administration.
+# It uses the website's own image and files (paths are from web/vendor/tornado-engine/cron/docker).
+services:
+  scheduler:
+    image: ${COMPOSE_PROJECT_NAME:-tornado}-app
+    pull_policy: never
+    env_file: ../../../../../.env
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - ../../../../:/var/www/html
+    depends_on:
+      app:
+        condition: service_started
+    # internal: the database and other containers. edge: jobs that reach the internet.
+    networks: [internal, edge]
+
+networks:
+  internal:
+    internal: true
+  edge: {}

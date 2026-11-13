@@ -1,0 +1,27 @@
+{
+    "name": "tornado-engine/cron",
+    "description": "Tornado Engine core-module: scheduled jobs. Modules register jobs; admins choose when they run.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.4",
+        "illuminate/support": "^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "TornadoEngine\\Cron\\": "src/"
+        }
+    },
+    "extra": {
+        "tornado": {
+            "name": "Cron",
+            "core": ">=0.4",
+            "core-module": true,
+            "provider": "TornadoEngine\\Cron\\CronServiceProvider",
+            "compose": "docker/compose.yml"
+        },
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        }
+    }
+}
