@@ -18,8 +18,6 @@
                 if (response.ok) this.result = await response.json();
             },
          }" x-init="explain(); $watch('expression', () => explain())" class="space-y-4">
-        <p class="text-gray-600 dark:text-gray-400">{{ __('Type a schedule to see when it runs, then copy it into a job below.') }}</p>
-
         <div>
             <label for="cron-calculator" class="sr-only">{{ __('Cron expression') }}</label>
             <input id="cron-calculator" type="text" x-model.debounce.250ms="expression" autocapitalize="off" autocomplete="off" spellcheck="false"
