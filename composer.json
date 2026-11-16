@@ -18,7 +18,8 @@
             "core": ">=0.6",
             "core-module": true,
             "provider": "TornadoEngine\\Cron\\CronServiceProvider",
-            "compose": "docker/compose.yml"
+            "compose": "docker/compose.yml",
+            "settings": "/administration/cron"
         },
         "branch-alias": {
             "dev-main": "0.5.x-dev"
