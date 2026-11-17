@@ -15,6 +15,7 @@
     "extra": {
         "tornado": {
             "name": "Cron",
+            "prompt": "Scheduled jobs: $cron->job(...), which admins can see and change in Administration → Scheduled jobs.",
             "core": ">=0.15",
             "core-module": true,
             "provider": "TornadoEngine\\Cron\\CronServiceProvider",
