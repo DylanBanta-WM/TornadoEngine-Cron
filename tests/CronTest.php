@@ -51,9 +51,9 @@ class CronTest extends TestCase
     {
         $this->assertSame('0 2 * * *', $this->scheduled()['cron:test.refresh']);
 
-        $this->actingAs($this->admin())->from('/administration')
+        $this->actingAs($this->admin())->from('/settings')
             ->post('/administration/cron/test.refresh', ['schedule' => '*/15 * * * *', 'enabled' => '1'])
-            ->assertRedirect('/administration');
+            ->assertRedirect('/settings');
 
         $this->assertSame('*/15 * * * *', CronJob::find('test.refresh')->schedule);
     }
@@ -68,7 +68,7 @@ class CronTest extends TestCase
 
     public function test_invalid_cron_expressions_are_refused(): void
     {
-        $this->actingAs($this->admin())->from('/administration')
+        $this->actingAs($this->admin())->from('/settings')
             ->post('/administration/cron/test.refresh', ['schedule' => 'every day', 'enabled' => '1'])
             ->assertSessionHasErrors('schedule');
     }
@@ -77,7 +77,7 @@ class CronTest extends TestCase
     {
         $admin = $this->admin();
 
-        $this->actingAs($admin)->from('/administration')->post('/administration/cron/test.refresh/run')->assertRedirect('/administration');
+        $this->actingAs($admin)->from('/settings')->post('/administration/cron/test.refresh/run')->assertRedirect('/settings');
         $this->assertSame(1, $this->runs);
         $this->assertSame('ok', CronJob::find('test.refresh')->last_status);
 
@@ -85,7 +85,7 @@ class CronTest extends TestCase
         $this->assertSame('failed', CronJob::find('test.broken')->last_status);
         $this->assertSame('It broke', CronJob::find('test.broken')->last_message);
 
-        $this->actingAs($admin)->get('/administration/cron')
+        $this->actingAs($admin)->get('/settings/cron')
             ->assertSee('Refresh the test list')
             ->assertSee('Refreshed 3 items')
             ->assertSee('It broke');
@@ -93,20 +93,20 @@ class CronTest extends TestCase
 
     public function test_each_job_takes_a_cron_expression_as_text(): void
     {
-        $this->actingAs($this->admin())->get('/administration/cron')
+        $this->actingAs($this->admin())->get('/settings/cron')
             ->assertSee('name="schedule"', false)
             ->assertDontSee('<select', false)
             ->assertSee('At 02:00.');
 
         $this->actingAs($this->admin())->post('/administration/cron/test.refresh', ['job' => 'test.refresh', 'schedule' => ' 30 6 * * 1-5 ', 'enabled' => '1']);
         $this->assertSame('30 6 * * 1-5', CronJob::find('test.refresh')->schedule);
-        $this->actingAs($this->admin())->get('/administration/cron')->assertSee('At 06:30 on Monday through Friday. (Default: 0 2 * * *)');
+        $this->actingAs($this->admin())->get('/settings/cron')->assertSee('At 06:30 on Monday through Friday. (Default: 0 2 * * *)');
     }
 
     public function test_the_calculator_explains_expressions(): void
     {
         $admin = $this->admin();
-        $this->actingAs($admin)->get('/administration/cron')->assertSee('Cron calculator');
+        $this->actingAs($admin)->get('/settings/cron')->assertSee('Cron calculator');
 
         $this->actingAs($admin)->getJson('/administration/cron/explain?expression='.urlencode('*/15 9-17 * * mon-fri'))
             ->assertOk()
@@ -136,9 +136,9 @@ class CronTest extends TestCase
         $other = Cache::lock('cron:turn', 60);
         $other->get(); // Another job is running.
 
-        $this->actingAs($admin)->from('/administration/cron')->post('/administration/cron/test.refresh/run');
+        $this->actingAs($admin)->from('/settings/cron')->post('/administration/cron/test.refresh/run');
         $this->assertSame(0, $this->runs);
-        $this->actingAs($admin)->get('/administration/cron')->assertSee('Another job is running.');
+        $this->actingAs($admin)->get('/settings/cron')->assertSee('Another job is running.');
 
         $other->release();
         $this->actingAs($admin)->post('/administration/cron/test.refresh/run');
@@ -148,7 +148,7 @@ class CronTest extends TestCase
 
     public function test_the_card_warns_when_the_scheduler_isnt_running(): void
     {
-        $this->actingAs($this->admin())->get('/administration/cron')->assertSee('The scheduler isn\'t running', false);
+        $this->actingAs($this->admin())->get('/settings/cron')->assertSee('The scheduler isn\'t running', false);
     }
 
     public function test_only_admins_can_change_jobs(): void
